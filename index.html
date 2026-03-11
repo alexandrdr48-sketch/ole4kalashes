@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -135,38 +135,11 @@
         .prev-btn { left: 20px; }
         .next-btn { right: 20px; }
 
-        /* =========================================
-           БЛОК "СЕРТИФИКАТЫ"
-           ========================================= */
-        .certificates-container { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-            gap: 30px; 
-            max-width: 1000px; 
-            margin: 0 auto; 
-            padding: 0 20px; 
-        }
-        .cert-card { 
-            background: var(--card-bg); 
-            padding: 15px; 
-            border-radius: 12px; 
-            border: 1px solid var(--card-border); 
-            backdrop-filter: blur(10px); 
-            transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s; 
-            box-shadow: 0 10px 30px var(--shadow-base); 
-        }
-        .cert-card:hover { 
-            transform: translateY(-10px); 
-            border-color: var(--gold); 
-            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2), inset 0 0 15px rgba(212, 175, 55, 0.05); 
-        }
-        .cert-card img { 
-            width: 100%; 
-            height: auto; 
-            border-radius: 6px; 
-            display: block; 
-            border: 1px solid rgba(255,255,255,0.05); 
-        }
+        /* СЕРТИФИКАТЫ */
+        .certificates-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+        .cert-card { background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--card-border); backdrop-filter: blur(10px); transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s; box-shadow: 0 10px 30px var(--shadow-base); }
+        .cert-card:hover { transform: translateY(-10px); border-color: var(--gold); box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2), inset 0 0 15px rgba(212, 175, 55, 0.05); }
+        .cert-card img { width: 100%; height: auto; border-radius: 6px; display: block; border: 1px solid rgba(255,255,255,0.05); }
 
         /* БЛОК ВОПРОСОВ */
         .faq-container { max-width: 800px; margin: 0 auto; text-align: left; }
@@ -207,19 +180,35 @@
         .modal-buttons { display: flex; flex-direction: column; gap: 15px; }
         .modal-btn { width: 100%; padding: 16px 0; }
 
-        /* Адаптив (Телефоны) */
+        /* =========================================
+           АДАПТИВ ДЛЯ ТЕЛЕФОНОВ (ИСПРАВЛЕННЫЙ)
+           ========================================= */
         @media (max-width: 768px) {
-            header { flex-direction: column; gap: 15px; padding: 20px; }
-            .logo-wrapper { flex-direction: column; gap: 5px; text-align: center; }
-            .logo-text { font-size: 14px; max-width: 100%; }
-            .hero h1 { font-size: 36px; }
-            .nav-links { flex-wrap: wrap; justify-content: center; }
+            /* Шапка становится ультра-компактной */
+            header { flex-direction: column; gap: 8px; padding: 10px 15px; }
+            
+            /* Логотип и текст выстраиваем в одну горизонтальную линию */
+            .logo-wrapper { flex-direction: row; gap: 10px; text-align: left; justify-content: center; width: 100%; }
+            .logo-img { width: 45px !important; height: 45px !important; }
+            .logo-text { font-size: 11px; max-width: 200px; letter-spacing: 1px; }
+            
+            /* Пункты меню сжимаем */
+            .nav-links { flex-wrap: wrap; justify-content: center; gap: 12px; }
+            .nav-links a { font-size: 11px; }
+            
+            /* На телефонах прячем кнопку из шапки, чтобы не съедала экран */
+            header .btn { display: none; }
+            
+            /* Главный экран и остальные блоки */
+            .hero { padding: 100px 15px 50px; min-height: 60vh; }
+            .hero h1 { font-size: 32px; margin-bottom: 15px; }
+            .hero p { font-size: 15px; margin-bottom: 30px; }
             
             .about-container { flex-direction: column; align-items: center; padding: 30px 20px; text-align: center; }
             .about-photo { width: 100%; max-width: 250px; flex: 0 0 auto; aspect-ratio: 3 / 4; position: relative; }
             .about-photo video { position: relative; }
             
-            .about-features li { justify-content: center; }
+            .about-features li { justify-content: center; font-size: 13px;}
             .floating-book { bottom: 20px; right: 20px; width: 50px; height: 50px; }
             .bg-switcher { bottom: 20px; left: 20px; width: 40px; height: 40px; font-size: 16px; }
             .carousel-container { height: 400px; }
@@ -264,7 +253,7 @@
                     </g>
                 </g>
             </svg>
-            <div class="logo-text">НАРАЩИВАНИЕ РЕСНИЦ | ЛИПЕЦК | ОЛЬГА МАЛИКОВА</div>
+            <div class="logo-text">НАРАЩИВАНИЕ РЕСНИЦ | ОЛЬГА МАЛИКОВА</div>
         </div>
         
         <nav class="nav-links">
@@ -346,13 +335,13 @@
         <h2 class="reveal">Мои сертификаты</h2>
         <div class="certificates-container">
             <div class="cert-card reveal delay-1">
-                <img src="https://sun9-84.userapi.com/s/v1/ig2/gegTgCZ5ZzY61kXHiSUbJPXyJgaxqn0-n1yDThebtmZ6nKSYNvJGwarR_mD2KDarhlBkqeuZdGPOKu8ar23qk-IA.jpg?quality=95&as=32x43,48x64,72x96,108x144,160x213,240x320,360x480,480x640,540x720,640x853,720x960,1080x1440,1280x1707,1440x1920,1536x2048&from=bu&cs=1536x0" alt="Сертификат 1">
+                <img src="https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80" alt="Сертификат 1">
             </div>
             <div class="cert-card reveal delay-2">
-                <img src="https://sun9-86.userapi.com/s/v1/ig2/ZuAPIRVsxUgzF0NqcZMsgxxtDIgAn0-Hk1-DkIAHPTp_ZQoGUy_SyNNRpfcAvagp-owb_XsD9RfUV0ZYl9flpTYy.jpg?quality=95&as=32x43,48x64,72x96,108x144,160x213,240x320,360x480,480x640,540x720,640x853,720x960,1080x1440,1280x1707,1440x1920,1536x2048&from=bu&cs=1536x0" alt="Сертификат 2">
+                <img src="https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80" alt="Сертификат 2">
             </div>
             <div class="cert-card reveal delay-3">
-                <img src="https://sun9-64.userapi.com/s/v1/ig2/JhwUYbp9J2GKyBOc8rDJB9W56-oEVAjbyECp-eu6VoO0Inz2bpKur9FG29iS8Qb_4G1pswCkvD-DiO56_wIVrzNf.jpg?quality=95&as=32x43,48x64,72x96,108x144,160x213,240x320,360x480,480x640,540x720,640x853,720x960,1080x1440,1280x1707,1440x1920,1536x2048&from=bu&cs=1536x0" alt="Сертификат 3">
+                <img src="https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80" alt="Сертификат 3">
             </div>
         </div>
     </section>
