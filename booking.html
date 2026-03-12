@@ -1,0 +1,257 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background-color: var(--tg-theme-bg-color, #ffffff); color: var(--tg-theme-text-color, #000000); }
+    
+    /* Стиль для плашки VPN */
+    .vpn-warning {
+      background-color: var(--tg-theme-secondary-bg-color, #f4f4f5);
+      color: var(--tg-theme-hint-color, #999999);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-align: center;
+      margin-bottom: 20px;
+      border: 1px solid var(--tg-theme-hint-color, #ccc);
+    }
+
+    h2 { text-align: center; margin-bottom: 20px; font-size: 22px; }
+    label { font-weight: bold; display: block; margin-top: 15px; font-size: 14px; }
+    
+    select, input { 
+        width: 100%; 
+        box-sizing: border-box; 
+        padding: 12px; 
+        margin-top: 8px; 
+        border-radius: 8px; 
+        border: 1px solid var(--tg-theme-hint-color, #ccc); 
+        font-size: 16px; 
+        background-color: var(--tg-theme-secondary-bg-color, #f4f4f5); 
+        color: var(--tg-theme-text-color, #000); 
+    }
+    
+    /* Красивое сообщение об ошибке */
+    .error-text {
+        color: #e74c3c;
+        font-size: 13px;
+        margin-top: 6px;
+        display: none; /* Скрыто по умолчанию */
+        font-weight: 500;
+    }
+
+    .btn { width: 100%; padding: 16px; background-color: #FF69B4; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 25px; cursor: pointer; }
+    .btn:disabled { background-color: #cccccc; }
+  </style>
+</head>
+<body>
+
+  <div class="vpn-warning">
+    🌐 Если календарь грузится долго, для быстрой работы рекомендуем отключить VPN
+  </div>
+
+  <h2>Запись на реснички ✨</h2>
+  
+  <label>Ваш номер телефона:</label>
+  <input type="tel" id="phone" placeholder="+7 (999) 000-00-00" maxlength="18">
+
+  <label>Выберите услугу:</label>
+  <select id="service">
+    <option>Классика</option>
+    <option>Объём 1.5D</option>
+    <option>Объем 2D</option>
+    <option>Объем 2.5D</option>
+    <option>Объем 3D</option>
+    <option>Мокрый эффект</option>
+    <option>Трендовое наращивание</option>
+    <option>Снятие чужой работы</option>
+  </select>
+
+  <label>Выберите дату:</label>
+  <input type="date" id="date">
+  <div id="dateError" class="error-text"></div>
+
+  <label>Выберите удобное время:</label>
+  <select id="time">
+    <option value="" disabled selected>Сначала выберите дату 👆</option>
+  </select>
+
+  <button class="btn" id="mainBtn" onclick="submitForm()">ПОДТВЕРДИТЬ ЗАПИСЬ</button>
+
+  <script>
+    // ==========================================
+    // СВЯЗЬ С СЕРВЕРОМ VERCEL
+    // ==========================================
+    const BACKEND_URL = "https://lashes-bot.vercel.app/api"; 
+
+    let tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    tg.MainButton.hide();
+
+    // Берем данные клиента прямо из Telegram
+    const user = tg.initDataUnsafe?.user || {};
+    const CLIENT_UID = user.id || "";
+    const CLIENT_NAME = user.first_name || "Гость";
+    const CLIENT_UNAME = user.username || "";
+
+    let bookedData = {};
+    const allSlots = ["09:00", "12:00", "15:00", "18:00"];
+
+    // 1. При открытии просим Vercel дать нам занятые слоты
+    fetch(BACKEND_URL + "?action=get_slots")
+      .then(res => res.json())
+      .then(data => { bookedData = data; })
+      .catch(err => console.error("Ошибка загрузки слотов"));
+
+    // ==========================================
+    // 1. НАСТРОЙКА КАЛЕНДАРЯ И ЛИМИТОВ
+    // ==========================================
+    let dateInput = document.getElementById('date');
+    let today = new Date();
+    
+    // Текущий месяц (0-11) и год
+    let currentMonth = today.getMonth();
+    let currentYear = today.getFullYear();
+
+    // Вычисляем последний день следующего месяца
+    let maxDate = new Date(currentYear, currentMonth + 2, 0);
+
+    // Функция для перевода даты в формат YYYY-MM-DD
+    const formatDate = (dateObj) => {
+        let d = new Date(dateObj);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        return d.toISOString().split('T')[0];
+    };
+
+    // Строковые значения минимальной и максимальной даты
+    let minDateStr = formatDate(today);
+    let maxDateStr = formatDate(maxDate);
+
+    // Ограничиваем выбор дат для Android и ПК
+    dateInput.min = minDateStr;
+    dateInput.max = maxDateStr;
+
+    // ==========================================
+    // 2. КРАСИВАЯ МАСКА ДЛЯ ТЕЛЕФОНА
+    // ==========================================
+    let phoneInput = document.getElementById('phone');
+    
+    phoneInput.addEventListener('focus', function() {
+      if (this.value === '') this.value = '+7 ';
+    });
+
+    phoneInput.addEventListener('input', function(e) {
+      let x = this.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+      
+      if (!x[1]) {
+        this.value = '+7 ';
+        return;
+      }
+      
+      if (x[1] === '8') x[1] = '7';
+      if (x[1] === '9') {
+        x[2] = '9' + (x[2] ? x[2].substring(0, 2) : '');
+        x[1] = '7';
+      }
+
+      this.value = '+7 ' + (x[2] ? '(' + x[2] : '') + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+    });
+
+    // ==========================================
+    // 3. УМНЫЕ ПРОВЕРКИ ПРИ ВЫБОРЕ ДАТЫ
+    // ==========================================
+    document.getElementById('date').addEventListener('change', function() {
+      let selectedDate = this.value; 
+      let timeSelect = document.getElementById('time');
+      let dateError = document.getElementById('dateError');
+      
+      // Скрываем ошибку при каждом новом изменении
+      dateError.style.display = 'none';
+
+      if (!selectedDate) {
+        timeSelect.innerHTML = '<option value="" disabled selected>Сначала выберите дату 👆</option>';
+        return;
+      }
+
+      // ПРОВЕРКА 1: Выход за пределы 2-х месяцев (Фикс для iPhone)
+      if (selectedDate < minDateStr || selectedDate > maxDateStr) {
+        dateError.innerText = 'Запись возможна только на текущий и следующий месяц 🗓️';
+        dateError.style.display = 'block';
+        timeSelect.innerHTML = '<option value="" disabled selected>Запись невозможна 😔</option>';
+        this.value = ''; // Сбрасываем выбранную неправильную дату
+        return;
+      }
+
+      // ПРОВЕРКА 2: Выбрано воскресенье (0 - это воскресенье в JS)
+      let parsedDate = new Date(selectedDate);
+      if (parsedDate.getDay() === 0) {
+        dateError.innerText = 'По воскресеньям мастер не работает ☕️ Пожалуйста, выберите другой день.';
+        dateError.style.display = 'block';
+        timeSelect.innerHTML = '<option value="" disabled selected>Запись невозможна 😔</option>';
+        this.value = ''; // Сбрасываем выбранную неправильную дату
+        return;
+      }
+
+      // Если все проверки пройдены, фильтруем свободное время
+      timeSelect.innerHTML = '<option value="" disabled selected>Выберите время</option>';
+      let bookedToday = bookedData[selectedDate] || [];
+      let hasAvailable = false;
+
+      allSlots.forEach(slot => {
+        if (!bookedToday.includes(slot)) {
+          let opt = document.createElement('option');
+          opt.value = slot;
+          opt.textContent = slot;
+          timeSelect.appendChild(opt);
+          hasAvailable = true;
+        }
+      });
+
+      if (!hasAvailable) {
+        let opt = document.createElement('option');
+        opt.value = "";
+        opt.textContent = "Нет свободных мест на этот день 😔";
+        opt.disabled = true;
+        timeSelect.appendChild(opt);
+      }
+    });
+
+    // ==========================================
+    // 4. ОТПРАВКА ФОРМЫ
+    // ==========================================
+    function submitForm() {
+      let btn = document.getElementById("mainBtn");
+      let phone = document.getElementById("phone").value;
+      let service = document.getElementById("service").value;
+      let date = document.getElementById("date").value;
+      let time = document.getElementById("time").value;
+
+      if (phone.length < 18 || !date || !time) {
+        tg.showAlert("Пожалуйста, введите корректный номер телефона, выберите дату и время!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "ОТПРАВЛЯЕМ...";
+      
+      let finalUrl = BACKEND_URL + "?action=book" +
+        "&phone=" + encodeURIComponent(phone) +
+        "&service=" + encodeURIComponent(service) +
+        "&date=" + encodeURIComponent(date) +
+        "&time=" + encodeURIComponent(time) +
+        "&uid=" + encodeURIComponent(CLIENT_UID) +
+        "&name=" + encodeURIComponent(CLIENT_NAME) +
+        "&uname=" + encodeURIComponent(CLIENT_UNAME);
+
+      // Отправляем данные на Vercel (без mode: 'no-cors' для корректной связи)
+      fetch(finalUrl, { method: 'GET' })
+        .then(() => { setTimeout(() => tg.close(), 500); })
+        .catch(() => { setTimeout(() => tg.close(), 500); });
+    }
+  </script>
+</body>
+</html>
